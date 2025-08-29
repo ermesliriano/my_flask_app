@@ -1,0 +1,27 @@
+Estoy desarrollando los pasos del proyecto de implementación de la arquitectura CI/CD con Jenkins y Despliegue en EC2 que me devolviste en la conversación "Pasos para arquitectura solución". Esto es lo que tengo actualmente:
+1) la estructura de directorios y ficheros está en C:\devops\ y fue creada tal y como me la indicaste, aunque hecho de menos los ficheros Dockerfile, docker-compose.yml, deploy.yml:
+my-flask-app/               # Directorio raíz del proyecto
+├── Jenkinsfile             # Definición del pipeline de Jenkins para CI/CD
+├── manage.py               # Script de inicialización de la BD
+├── manage.sh               # Script Bash para ejecutar manage.py con variables de entorno
+├── requirements.txt        # Lista de dependencias de Python (pip)
+├── run.py                  # Punto de entrada para ejecutar la aplicación Flask
+└── app/                    # Paquete de la aplicación Flask
+    ├── __init__.py         # Inicialización de la app Flask y la base de datos
+    ├── config.py           # Configuraciones (development, production, etc.)
+    ├── models.py           # Definición del modelo de datos (tabla Data)
+    └── routes.py           # Definición de las rutas (endpoints) de la API Flask
+Actualmente, cuando intento un Estoy desarrollando los pasos del proyecto de implementación de la arquitectura CI/CD con Jenkins y Despliegue en EC2 que me devolviste en la conversación "Pasos para arquitectura solución". Esto es lo que tengo actualmente:
+1) la estructura de directorios y ficheros está en C:\devops\ y fue creada tal y como me la indicaste, aunque hecho de menos los ficheros Dockerfile, docker-compose.yml, deploy.yml:
+my-flask-app/               # Directorio raíz del proyecto
+├── Jenkinsfile             # Definición del pipeline de Jenkins para CI/CD
+├── manage.py               # Script de inicialización de la BD
+├── manage.sh               # Script Bash para ejecutar manage.py con variables de entorno
+├── requirements.txt        # Lista de dependencias de Python (pip)
+├── run.py                  # Punto de entrada para ejecutar la aplicación Flask
+└── app/                    # Paquete de la aplicación Flask
+    ├── __init__.py         # Inicialización de la app Flask y la base de datos
+    ├── config.py           # Configuraciones (development, production, etc.)
+    ├── models.py           # Definición del modelo de datos (tabla Data)
+    └── routes.py           # Definición de las rutas (endpoints) de la API Flask
+Actualmente, cuando intento un 

@@ -1,0 +1,36 @@
+version: '3'
+services:
+  db:
+    image: postgres:13-alpine
+    container_name: dev_postgres
+    environment:
+      - POSTGRES_USER=myuser
+      - POSTGRES_PASSWORD=mypassword
+      - POSTGRES_DB=mydatabase
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U myuser -d mydatabase"]
+      interval: 10s
+      retries: 5
+
+  web:
+    build: .  # Construye la imagen usando el Dockerfile en el directorio actual
+    container_name: dev_flask
+    environment:
+      - FLASK_ENV=development
+      - DATABASE_URI=postgresql://myuser:mypassword@db:5432/mydatabase
+    ports:
+      - "5000:5000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - .:/app  # Monta el código fuente local dentro del contenedor (para autoreload en desarrollo)
+    command: flask run --host=0.0.0.0 --port=5000
+
+# Definición de volumen persistente para la base de datos
+volumes:
+  pgdata:
