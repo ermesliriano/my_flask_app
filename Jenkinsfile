@@ -8,7 +8,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 // Jenkins ya realiza checkout automático si se usa Pipeline from SCM; si no, usar:
-                git 'https://github.com/ermesliriano/my_flask_app.git'
+                git branch: 'main', url: 'https://github.com/ermesliriano/my_flask_app.git'
             }
         }
         stage('Build Docker Image') {
