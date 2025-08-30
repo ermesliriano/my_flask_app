@@ -2,13 +2,13 @@ pipeline {
     agent any
     environment {
         // Opcional: variables globales, p. ej. nombre de la imagen Docker
-        IMAGE_NAME = "<tu_usuario_dockerhub>/my-flask-app"
+        IMAGE_NAME = "ermesliriano/my-flask-app"
     }
     stages {
         stage('Checkout') {
             steps {
                 // Jenkins ya realiza checkout automático si se usa Pipeline from SCM; si no, usar:
-                git 'https://github.com/<tu_usuario_github>/<tu_repo>.git'
+                git 'https://github.com/ermesliriano/my_flask_app.git'
             }
         }
         stage('Build Docker Image') {
