@@ -38,7 +38,7 @@ pipeline {
                 echo "Desplegando la aplicación con Ansible..."
                 // Ejecutar el playbook Ansible pasando la imagen como extra-var
                 // Usa inventario sencillo con la IP/host del servidor remoto
-                sshagent(['${JENKINS_KEYPAIR}']) {  // credencial SSH para Ansible
+                sshagent([${JENKINS_KEYPAIR}]) {  // credencial SSH para Ansible
                     sh '''
                        ansible-playbook -i "${DEPLOY_HOST}," -u ${DEPLOY_USER} \
                        --private-key ~/.ssh/id_rsa \
