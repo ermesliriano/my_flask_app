@@ -17,20 +17,20 @@ services:
       retries: 5
 
   web:
-    build: .  # Construye la imagen usando el Dockerfile en el directorio actual
+    build: .
     container_name: dev_flask
     environment:
       - FLASK_ENV=development
       - DATABASE_URI=postgresql://myuser:mypassword@db:5432/mydatabase
+      - INIT_DB=1                  # <— activa la inicialización en dev
     ports:
       - "5000:5000"
     depends_on:
       db:
         condition: service_healthy
     volumes:
-      - .:/app  # Monta el código fuente local dentro del contenedor (para autoreload en desarrollo)
+      - .:/app
     command: bash -c "python manage.py && flask run --host=0.0.0.0 --port=5000"
 
-# Definición de volumen persistente para la base de datos
 volumes:
   pgdata:
