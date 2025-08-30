@@ -1,0 +1,79 @@
+--- 
+- name: Desplegar aplicación Flask en Docker
+  hosts: all                     # El inventario define el Deployment-Server como "all" o un grupo específico
+  become: true                   # Asume que necesitamos privilegios sudo para manejar Docker
+  vars:
+    app_name: "my-flask-app"
+    container_name: "my-flask-app"   # Nombre del contenedor Docker
+    docker_image: ""                # Se espera pasar este var desde Jenkins (e.g., ermesliriano/my-flask-app:vX.Y.Z)
+    app_port: 5000                  # Puerto interno de la app Flask en el contenedor
+    host_port: 5000                 # Puerto en el host para mapear (puede ser 80 en producción)
+    healthcheck_url: "http://localhost:5000/health"  # URL de health-check HTTP
+  collections:
+    - community.docker             # Usamos la colección community.docker
+  tasks:
+
+  - name: Comprobar contenedor actualmente en ejecución
+    community.docker.docker_container_info:
+      name: "{{ container_name }}"
+    register: current_container
+    failed_when: false    # No marcar como fracaso si no existe
+
+  - name: Guardar imagen previa si hay un contenedor en ejecución
+    ansible.builtin.set_fact:
+      prev_image: "{{ current_container.container.Image }}"
+    when: current_container.container is defined
+
+  - name: Detener y eliminar contenedor anterior (si existe)
+    community.docker.docker_container:
+      name: "{{ container_name }}"
+      state: absent       # "absent" asegura que el contenedor (si existe) se detenga y elimine
+    ignore_errors: true   # Ignorar error si no existe el contenedor
+
+  - name: Descargar la nueva imagen de Docker (pull)
+    community.docker.docker_image:
+      name: "{{ docker_image }}"   # nombre:tag de la imagen, e.g. "ermesliriano/my-flask-app:vX.Y.Z"
+      source: pull
+    register: image_pull
+
+  - name: Desplegar nuevo contenedor Docker
+    community.docker.docker_container:
+      name: "{{ container_name }}"
+      image: "{{ docker_image }}"
+      state: started
+      detach: true                # Correr en segundo plano (daemonized)
+      recreate: true              # Fuerza recreación (por si contenedor existía)
+      restart_policy: unless-stopped
+      ports:
+        - "{{ host_port }}:{{ app_port }}"   # Mapear puerto host:contenedor, p. ej. 5000:5000
+    register: deploy_result
+
+  - name: Health-check HTTP de la aplicación desplegada
+    ansible.builtin.uri:
+      url: "{{ healthcheck_url }}"
+      status_code: 200            # esperamos código 200 OK
+      timeout: 5                  # segundos máximo por intento
+    register: healthcheck
+    retries: 5                    # reintentar varias veces para dar tiempo a iniciar
+    delay: 3                      # esperar 3s entre intentos
+    until: healthcheck.status == 200
+
+  - name: Confirmar despliegue exitoso
+    ansible.builtin.debug:
+      msg: "✔ Despliegue exitoso de {{ docker_image }}. Health-check OK."
+
+  rescue:
+    - name: **FALLO** - Restaurar contenedor con la imagen previa
+      community.docker.docker_container:
+        name: "{{ container_name }}"
+        image: "{{ prev_image | default('') }}"   # usar la última imagen funcional conocida
+        state: started
+        detach: true
+        restart_policy: unless-stopped
+        ports:
+          - "{{ host_port }}:{{ app_port }}"
+      when: prev_image is defined
+
+    - name: Registrar error de health-check
+      ansible.builtin.fail:
+        msg: "Health-check falló. Se restauró la versión anterior '{{ prev_image }}'."
