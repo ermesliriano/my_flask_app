@@ -45,10 +45,13 @@
         state: started
         enabled: yes
 
-    - name: Instalar SDK de Docker para Python en el host remoto
-      pip:
-        name: docker
+    # En Debian/Ubuntu instala el SDK oficial desde repos
+    - name: Instalar SDK Docker para Python (Debian/Ubuntu)
+      apt:
+        name: python3-docker
         state: present
+        update_cache: yes
+      when: ansible_os_family == "Debian"
 
   tasks:
     - block:
