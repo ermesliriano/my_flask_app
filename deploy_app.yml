@@ -63,8 +63,17 @@
 
         - name: Guardar imagen previa si existe contenedor
           set_fact:
-            prev_image: "{{ current_container.container.Image }}"
-          when: current_container.container is defined
+            # Intenta repo:tag (Config.Image); si no, cae a Image; si no, omite
+            prev_image: >-
+              {{
+                (current_container.container | default({})).Config.Image
+                | default((current_container.container | default({})).Image, true)
+              }}
+          when:
+            - current_container is defined
+            - (current_container.exists | default(false))      # preferible: usa el flag 'exists'
+            - current_container.container is defined
+            - current_container.container is not none
 
         - name: Eliminar contenedor previo (si existe)
           community.docker.docker_container:
