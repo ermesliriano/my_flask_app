@@ -10,6 +10,7 @@ pipeline {
         // Datos de servidor de despliegue
         DEPLOY_HOST = "172.31.34.199"
         DEPLOY_USER = "ubuntu"  // usuario remoto con permisos Docker
+        JENKINS_KEYPAIR = "802e7cc5-c46d-4637-967e-01b08c7d21f0"
     }
     stages {
         stage('Build Docker Image') {
@@ -37,7 +38,7 @@ pipeline {
                 echo "Desplegando la aplicación con Ansible..."
                 // Ejecutar el playbook Ansible pasando la imagen como extra-var
                 // Usa inventario sencillo con la IP/host del servidor remoto
-                sshagent(['ansible-ssh-credential-id']) {  // credencial SSH para Ansible
+                sshagent(['${JENKINS_KEYPAIR}']) {  // credencial SSH para Ansible
                     sh '''
                        ansible-playbook -i "${DEPLOY_HOST}," -u ${DEPLOY_USER} \
                        --private-key ~/.ssh/id_rsa \
