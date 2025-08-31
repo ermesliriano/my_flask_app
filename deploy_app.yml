@@ -86,51 +86,63 @@
             name: "{{ docker_image }}"
             source: pull
 
-        - name: Desplegar contenedor con la nueva imagen
+        - name: Eliminar contenedor previo si existe
           community.docker.docker_container:
             name: "{{ container_name }}"
-            image: "{{ docker_image }}"
-            state: started
-            detach: true
-            recreate: true
-            restart_policy: unless-stopped
-            ports:
-              - "{{ host_port }}:{{ app_port }}"
-            env:
-              FLASK_ENV: "production"
-              FLASK_APP: "run.py"
-              SQLALCHEMY_DATABASE_URI: "sqlite:////data/app.db"
-              # O si usas Postgres en prod:
-              # SQLALCHEMY_DATABASE_URI: "postgresql://user:pass@HOST:5432/db"
-            volumes:
-              - "/var/lib/{{ container_name }}:/data"  # para SQLite persistente si lo usas
+            state: absent
+          ignore_errors: true
 
-        - name: Health-check HTTP
-          uri:
-            url: "{{ healthcheck_url }}"
-            status_code: 200
-            timeout: 5
-          register: healthcheck
-          retries: 5
-          delay: 3
-          until: healthcheck.status == 200
+        - block:
+            - name: Desplegar contenedor
+              community.docker.docker_container:
+                name: "{{ container_name }}"
+                image: "{{ docker_image }}"
+                state: started
+                detach: true
+                recreate: true
+                restart_policy: unless-stopped
+                ports:
+                  - "{{ host_port }}:{{ app_port }}"
+                env:
+                  FLASK_ENV: "production"
+                  FLASK_APP: "run.py"
+                  SQLALCHEMY_DATABASE_URI: "sqlite:////data/app.db"
+                volumes:
+                  - "/var/lib/{{ container_name }}:/data"
 
-        - name: Confirmación de despliegue exitoso
-          debug:
-            msg: "Despliegue OK de {{ docker_image }} (health-check 200)."
+            - name: Esperar a que el puerto esté abierto
+              wait_for:
+                host: "127.0.0.1"
+                port: "{{ host_port }}"
+                state: started
+                delay: 2
+                timeout: 90
 
-      rescue:
-        - name: Restaurar contenedor con la imagen previa
-          community.docker.docker_container:
-            name: "{{ container_name }}"
-            image: "{{ prev_image | default('') }}"
-            state: started
-            detach: true
-            restart_policy: unless-stopped
-            ports:
-              - "{{ host_port }}:{{ app_port }}"
-          when: prev_image is defined
+            - name: Health-check HTTP
+              uri:
+                url: "http://127.0.0.1:{{ host_port }}/health"
+                status_code: 200
+                timeout: 5
+              register: healthcheck
+              retries: 8
+              delay: 3
+              until: healthcheck.status == 200
 
-        - name: Fallar play para que Jenkins lo marque como FAILURE
-          fail:
-            msg: "Health-check falló. Se restauró la versión anterior: {{ prev_image | default('N/A') }}"
+          rescue:
+            - name: Mostrar ps y logs
+              shell: |
+                echo "=== docker ps ==="
+                docker ps -a
+                echo "=== logs ==="
+                docker logs --tail=200 {{ container_name }} || true
+              register: diag
+              changed: false
+              failed_when: false
+
+            - debug: var=diag.stdout_lines
+
+            # (rollback si guardaste prev_image)
+
+            - fail:
+                msg: "Health-check falló. Revisa los logs anteriores."
+
