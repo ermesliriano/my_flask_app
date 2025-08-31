@@ -8,7 +8,7 @@
     container_name: "my-flask-app"
     docker_image: ""                   # Lo recibe Jenkins como -e docker_image=...
     app_port: 5000
-    host_port: 5000
+    host_port: 80
     healthcheck_url: "http://localhost:5000/health"
 
   collections:
