@@ -136,7 +136,7 @@
                 echo "=== logs ==="
                 docker logs --tail=200 {{ container_name }} || true
               register: diag
-              changed: false
+              changed_when: false
               failed_when: false
 
             - debug: var=diag.stdout_lines
