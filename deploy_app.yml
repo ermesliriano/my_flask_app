@@ -109,6 +109,17 @@
                   SQLALCHEMY_DATABASE_URI: "sqlite:////data/app.db"
                 volumes:
                   - "/var/lib/{{ container_name }}:/data"
+                  
+            - name: Inicializar DB una vez si no existen tablas
+              community.docker.docker_container_exec:
+                container: "{{ container_name }}"
+                command: python manage.py
+                env:
+                  INIT_DB: "1"
+                  FLASK_ENV: "production"
+              register: initdb
+              changed_when: "'Database tables ensured' in (initdb.stdout | default(''))"
+
 
             - name: Esperar a que el puerto esté abierto
               wait_for:
